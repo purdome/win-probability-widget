@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seahawks Win Probability</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0c10;
+    --surface: #13161e;
+    --border: #252932;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --sea-green: #69be28;
+    --sea-blue: #002244;
+  }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .widget {
+    width: 100%;
+    max-width: 800px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+    position: relative;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    background: var(--sea-blue);
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .topbar-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--sea-green);
+    white-space: nowrap;
+  }
+
+  .game-select {
+    flex: 1;
+    max-width: 400px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.14);
+    color: #fff;
+    font-family: 'Barlow', sans-serif;
+    font-size: 12px;
+    padding: 6px 28px 6px 10px;
+    border-radius: 6px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2369be28'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    transition: border-color 0.2s;
+  }
+
+  .game-select:focus { border-color: var(--sea-green); }
+  .game-select option, .game-select optgroup { background: #1a1d26; color: #fff; }
+
+  /* ── Matchup header ── */
+  .header {
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .header-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    min-width: 80px;
+  }
+
+  .game-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .team-block { display: flex; align-items: center; gap: 8px; }
+
+  .team-logo {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    object-fit: contain;
+    background: #1e2230;
+  }
+
+  .team-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px; font-weight: 800;
+    letter-spacing: 0.02em; text-transform: uppercase;
+  }
+
+  .score-block {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 2px; padding: 0 16px;
+  }
+
+  .score {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 30px; font-weight: 800;
+    letter-spacing: 0.05em; line-height: 1;
+  }
+
+  .game-status { font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+
+  /* ── Prob bar ── */
+  .prob-bar-container { padding: 14px 20px 10px; }
+  .prob-labels { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .prob-label { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; }
+  .prob-bar { height: 8px; border-radius: 4px; overflow: hidden; display: flex; background: var(--border); }
+  .prob-fill-away { height: 100%; transition: width 0.6s ease; }
+  .prob-fill-home { height: 100%; flex: 1; }
+
+  /* ── Chart ── */
+  .chart-area { padding: 0 16px 8px; }
+  .chart-wrap { position: relative; height: 200px; }
+
+  .quarter-labels {
+    display: flex; justify-content: space-between;
+    padding: 4px 8px 14px;
+  }
+  .q-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); text-align: center; flex: 1;
+  }
+
+  /* ── Plays ── */
+  .plays-section { border-top: 1px solid var(--border); padding: 14px 20px; }
+  .plays-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 10px;
+  }
+  .plays-list { display: flex; flex-direction: column; gap: 6px; max-height: 150px; overflow-y: auto; }
+  .plays-list::-webkit-scrollbar { width: 3px; }
+  .plays-list::-webkit-scrollbar-track { background: transparent; }
+  .plays-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .play-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 12px; color: var(--muted);
+    padding: 6px 8px; border-radius: 6px;
+    background: rgba(255,255,255,0.02);
+    border-left: 3px solid transparent;
+  }
+  .play-swing { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700; min-width: 44px; text-align: right; }
+  .play-desc { flex: 1; line-height: 1.4; }
+
+  /* ── States ── */
+  .state-overlay {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 240px; gap: 10px;
+    color: var(--muted); font-size: 13px;
+  }
+  .spinner {
+    width: 28px; height: 28px;
+    border: 2px solid var(--border);
+    border-top-color: var(--sea-green);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-msg { color: #f87171; font-size: 12px; text-align: center; max-width: 300px; line-height: 1.6; }
+
+  /* ── Tooltip ── */
+  .tooltip-box {
+    position: fixed;
+    background: #1e2230;
+    border: 1px solid var(--border);
+    border-radius: 6px; padding: 7px 10px;
+    font-size: 11px; pointer-events: none;
+    opacity: 0; transition: opacity 0.15s;
+    z-index: 100; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .tooltip-box.visible { opacity: 1; }
+  .tooltip-team { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; }
+  .tooltip-sub { color: var(--muted); margin-top: 2px; max-width: 220px; white-space: normal; }
+</style>
+</head>
+<body>
+
+<div class="widget" id="widget">
+
+  <div class="topbar">
+    <span class="topbar-title">🏆 Seahawks 2025</span>
+    <select class="game-select" id="gameSelect" onchange="loadFromSelect()">
+      <optgroup label="── Regular Season ──">
+        <option value="401772831" selected>Wk 1 · vs SF 49ers · L 13-17</option>
+        <option value="401772836">Wk 2 · at PIT Steelers · W 31-17</option>
+        <option value="401772736">Wk 3 · vs NO Saints · W 44-13</option>
+        <option value="401772938">Wk 4 · at ARI Cardinals · W 23-20</option>
+        <option value="401772746">Wk 5 · vs TB Buccaneers · L 35-38</option>
+        <option value="401772857">Wk 6 · at JAX Jaguars · W 20-12</option>
+        <option value="401772826">Wk 7 · vs HOU Texans · W 27-19</option>
+        <option value="401772926">Wk 9 · at WAS Commanders · W 38-14</option>
+        <option value="401772773">Wk 10 · vs ARI Cardinals · W 44-22</option>
+        <option value="401772884">Wk 11 · at LAR Rams · L 19-21</option>
+        <option value="401772886">Wk 12 · at TEN Titans · W 30-24</option>
+        <option value="401772896">Wk 13 · vs MIN Vikings · W 26-0</option>
+        <option value="401772900">Wk 14 · at ATL Falcons · W 37-9</option>
+        <option value="401772799">Wk 15 · vs IND Colts · W 18-16</option>
+        <option value="401772949">Wk 16 · vs LAR Rams · W 38-37 OT</option>
+        <option value="401772952">Wk 17 · at CAR Panthers · W 27-10</option>
+        <option value="401772961">Wk 18 · at SF 49ers · W 13-3</option>
+      </optgroup>
+      <optgroup label="── Playoffs ──">
+        <option value="401772984">Div · vs SF 49ers · W 41-6</option>
+        <option value="401772987">NFCCG · vs LAR Rams · W 31-27</option>
+        <option value="401772988">SB LX · vs NE Patriots · W 29-13 🏆</option>
+      </optgroup>
+    </select>
+  </div>
+
+  <div class="header">
+    <span class="header-label">Win Probability</span>
+    <div class="game-info" id="gameInfo"></div>
+    <span class="header-label" style="text-align:right;"></span>
+  </div>
+
+  <div id="content">
+    <div class="state-overlay"><div class="spinner"></div><span>Loading game data…</span></div>
+  </div>
+
+</div>
+
+<div class="tooltip-box" id="tooltip">
+  <div class="tooltip-team" id="ttTeam"></div>
+  <div class="tooltip-sub" id="ttSub"></div>
+</div>
+
+<script>
+var WORKER = "https://white-water-f2e8.max-m-purdon.workers.dev";
+var chartInstance = null;
+
+function loadFromSelect() {
+  loadGame(document.getElementById("gameSelect").value);
+}
+
+async function loadGame(gameId) {
+  showLoading();
+  try {
+    var res = await fetch(WORKER + "/?gameId=" + gameId);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    var data = await res.json();
+    render(data);
+  } catch(e) {
+    showError("Could not load game data.<br><small>" + e.message + "</small>");
+  }
+}
+
+function render(data) {
+  var comp = data.header && data.header.competitions && data.header.competitions[0];
+  if (!comp) { showError("Unexpected data format."); return; }
+
+  var away = comp.competitors.find(function(t){ return t.homeAway === "away"; });
+  var home = comp.competitors.find(function(t){ return t.homeAway === "home"; });
+  var wp = data.winprobability || [];
+  var plays = data.plays || [];
+
+  var awayColor = "#" + ((away && away.team && away.team.color) || "e74c3c");
+  var homeColor = "#" + ((home && home.team && home.team.color) || "002244");
+  var last = wp[wp.length - 1];
+  var homeWP = last ? Math.round(last.homeWinPercentage * 100) : 50;
+  var awayWP = 100 - homeWP;
+  var awayAbbr = (away && away.team && away.team.abbreviation) || "AWAY";
+  var homeAbbr = (home && home.team && home.team.abbreviation) || "HOME";
+  var awayScore = (away && away.score != null) ? away.score : "\u2013";
+  var homeScore = (home && home.score != null) ? home.score : "\u2013";
+  var status = (comp.status && comp.status.type && comp.status.type.shortDetail) || "Final";
+
+  document.getElementById("gameInfo").innerHTML =
+    '<div class="team-block">' +
+      '<img class="team-logo" src="https://a.espncdn.com/i/teamlogos/nfl/500/' + awayAbbr.toLowerCase() + '.png" onerror="this.style.display=\'none\'" alt="">' +
+      '<span class="team-name" style="color:' + awayColor + '">' + awayAbbr + '</span>' +
+    '</div>' +
+    '<div class="score-block">' +
+      '<div class="score">' + awayScore + ' \u2013 ' + homeScore + '</div>' +
+      '<div class="game-status">' + status + '</div>' +
+    '</div>' +
+    '<div class="team-block">' +
+      '<span class="team-name" style="color:' + homeColor + '">' + homeAbbr + '</span>' +
+      '<img class="team-logo" src="https://a.espncdn.com/i/teamlogos/nfl/500/' + homeAbbr.toLowerCase() + '.png" onerror="this.style.display=\'none\'" alt="">' +
+    '</div>';
+
+  document.getElementById("content").innerHTML =
+    '<div class="prob-bar-container">' +
+      '<div class="prob-labels">' +
+        '<span class="prob-label" style="color:' + awayColor + '">' + awayAbbr + ' ' + awayWP + '%</span>' +
+        '<span class="prob-label" style="color:' + homeColor + '">' + homeWP + '% ' + homeAbbr + '</span>' +
+      '</div>' +
+      '<div class="prob-bar">' +
+        '<div class="prob-fill-away" style="width:' + awayWP + '%;background:' + awayColor + '"></div>' +
+        '<div class="prob-fill-home" style="background:' + homeColor + '"></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="chart-area"><div class="chart-wrap"><canvas id="wpChart"></canvas></div></div>' +
+    '<div class="quarter-labels" id="qLabels"></div>' +
+    '<div class="plays-section"><div class="plays-title">Key Swings</div><div class="plays-list" id="playsList"></div></div>';
+
+  if (wp.length === 0) {
+    document.querySelector(".chart-area").innerHTML =
+      '<div class="state-overlay" style="min-height:160px;"><span>No win probability data for this game.</span></div>';
+  } else {
+    buildChart(wp, away, home, awayColor, homeColor, plays);
+  }
+  buildPlays(plays, away, home, awayColor, homeColor);
+  document.getElementById("qLabels").innerHTML =
+    ["Q1","Q2","Q3","Q4","Final"].map(function(l){ return '<span class="q-label">' + l + '</span>'; }).join("");
+}
+
+function buildChart(wp, away, home, awayColor, homeColor, plays) {
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+  var homeData = wp.map(function(p){ return +(p.homeWinPercentage * 100).toFixed(1); });
+  var playMap = {};
+  plays.forEach(function(p){ playMap[p.id] = p.text || ""; });
+  var playTexts = wp.map(function(p){ return playMap[p.playId] || ""; });
+
+  var canvas = document.getElementById("wpChart");
+  canvas.addEventListener("mousemove", function(e) {
+    var tt = document.getElementById("tooltip");
+    var x = e.clientX + 14;
+    if (x + 260 > window.innerWidth) x = e.clientX - 260;
+    tt.style.left = x + "px";
+    tt.style.top = (e.clientY - 10) + "px";
+  });
+  canvas.addEventListener("mouseleave", function() {
+    document.getElementById("tooltip").classList.remove("visible");
+  });
+
+  var ctx = canvas.getContext("2d");
+  var gH = ctx.createLinearGradient(0,0,0,200);
+  gH.addColorStop(0, homeColor + "55"); gH.addColorStop(1, homeColor + "00");
+  var gA = ctx.createLinearGradient(0,0,0,200);
+  gA.addColorStop(0, awayColor + "00"); gA.addColorStop(1, awayColor + "44");
+
+  var hAbbr = (home && home.team && home.team.abbreviation) || "HOME";
+  var aAbbr = (away && away.team && away.team.abbreviation) || "AWAY";
+
+  chartInstance = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: wp.map(function(_,i){ return i; }),
+      datasets: [{
+        data: homeData,
+        borderColor: homeColor, borderWidth: 2,
+        pointRadius: 0, pointHoverRadius: 5,
+        pointHoverBackgroundColor: homeColor,
+        fill: { target: { value: 50 }, above: gH, below: gA },
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 500, easing: "easeInOutQuart" },
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: false,
+          external: function(ctx2) {
+            var tt = document.getElementById("tooltip");
+            if (ctx2.tooltip.opacity === 0) { tt.classList.remove("visible"); return; }
+            var idx = ctx2.tooltip.dataPoints && ctx2.tooltip.dataPoints[0] && ctx2.tooltip.dataPoints[0].dataIndex;
+            if (idx == null) return;
+            var hp = homeData[idx];
+            document.getElementById("ttTeam").textContent = hAbbr + " " + hp + "% \u00b7 " + aAbbr + " " + (100-hp).toFixed(1) + "%";
+            var sub = playTexts[idx] || "";
+            document.getElementById("ttSub").textContent = sub.length > 70 ? sub.substring(0,70) + "\u2026" : sub;
+            tt.classList.add("visible");
+          }
+        }
+      },
+      scales: {
+        x: { display: false },
+        y: {
+          min: 0, max: 100,
+          ticks: { color: "#4b5563", font: { family: "'Barlow Condensed',sans-serif", size: 10 }, callback: function(v){ return v===50?"50%":""; }, stepSize: 50 },
+          grid: { color: function(c){ return c.tick && c.tick.value===50 ? "#2d3344" : "transparent"; } },
+          border: { display: false }
+        }
+      }
+    }
+  });
+}
+
+function buildPlays(plays, away, home, awayColor, homeColor) {
+  var list = document.getElementById("playsList");
+  if (!list) return;
+  var swings = plays
+    .filter(function(p){ return p.winProbability && p.winProbability.homeWinPercentage!=null && p.previousPlay && p.previousPlay.winProbability && p.previousPlay.winProbability.homeWinPercentage!=null; })
+    .map(function(p){ return { play:p, swing: p.winProbability.homeWinPercentage - p.previousPlay.winProbability.homeWinPercentage }; })
+    .filter(function(p){ return Math.abs(p.swing) > 0.08; })
+    .sort(function(a,b){ return Math.abs(b.swing)-Math.abs(a.swing); })
+    .slice(0,8);
+
+  if (!swings.length) { list.innerHTML = '<div class="play-item" style="color:#4b5563;font-size:11px;">No significant swings found.</div>'; return; }
+
+  list.innerHTML = swings.map(function(item) {
+    var s = item.swing, p = item.play;
+    var fav = s > 0 ? home : away;
+    var color = s > 0 ? homeColor : awayColor;
+    var pct = Math.round(Math.abs(s)*100);
+    var desc = p.text || (p.type && p.type.text) || "Play";
+    var qtr = p.period && p.period.number ? "Q"+p.period.number : "";
+    var clk = (p.clock && p.clock.displayValue) || "";
+    var abbr = (fav && fav.team && fav.team.abbreviation) || "";
+    desc = desc.length > 80 ? desc.substring(0,80)+"\u2026" : desc;
+    return '<div class="play-item" style="border-left-color:'+color+'">'+
+      '<span class="play-swing" style="color:'+color+'">+'+pct+'%</span>'+
+      '<span class="play-desc">'+
+        '<span style="color:'+color+';font-family:\'Barlow Condensed\',sans-serif;font-weight:700;">'+abbr+'</span>'+
+        (qtr ? ' <span style="color:#4b5563">'+qtr+' '+clk+'</span>' : '')+
+        ' \u2014 '+desc+
+      '</span></div>';
+  }).join("");
+}
+
+function showLoading() {
+  document.getElementById("gameInfo").innerHTML = "";
+  document.getElementById("content").innerHTML = '<div class="state-overlay"><div class="spinner"></div><span>Loading game data\u2026</span></div>';
+}
+
+function showError(msg) {
+  document.getElementById("content").innerHTML = '<div class="state-overlay"><span class="error-msg">\u26a0 '+msg+'</span></div>';
+}
+
+// Default: Wk 1 vs SF 49ers
+loadGame("401772831");
+</script>
+</body>
+</html>
