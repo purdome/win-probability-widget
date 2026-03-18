@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Win Probability Chart</title>
+<title>Seahawks Win Probability</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap');
@@ -11,12 +11,15 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #0d0f14;
-    --surface: #161922;
+    --bg: #0a0c10;
+    --surface: #13161e;
+    --surface2: #1a1e28;
     --border: #252932;
     --text: #e8eaf0;
     --muted: #6b7280;
-    --accent: #3b82f6;
+    --sea-green: #69be28;
+    --sea-blue: #002244;
+    --accent: #69be28;
   }
 
   body {
@@ -32,15 +35,67 @@
 
   .widget {
     width: 100%;
-    max-width: 780px;
+    max-width: 800px;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 14px;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.6);
     position: relative;
   }
 
+  /* ── Top bar ── */
+  .topbar {
+    background: var(--sea-blue);
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .topbar-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--sea-green);
+  }
+
+  .game-select-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    justify-content: flex-end;
+    max-width: 420px;
+  }
+
+  .game-select {
+    flex: 1;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #fff;
+    font-family: 'Barlow', sans-serif;
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+  }
+
+  .game-select:focus { border-color: var(--sea-green); }
+  .game-select option { background: #1a1e28; color: #fff; }
+
+  /* ── Header ── */
   .header {
     padding: 16px 20px 14px;
     border-bottom: 1px solid var(--border);
@@ -57,7 +112,7 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--muted);
-    min-width: 90px;
+    min-width: 80px;
   }
 
   .game-info {
@@ -71,7 +126,7 @@
   .team-block { display: flex; align-items: center; gap: 8px; }
 
   .team-logo {
-    width: 32px; height: 32px;
+    width: 34px; height: 34px;
     border-radius: 50%;
     object-fit: contain;
     background: #1e2230;
@@ -79,7 +134,7 @@
 
   .team-name {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 800;
     letter-spacing: 0.02em;
     text-transform: uppercase;
@@ -88,35 +143,33 @@
   .score-block {
     display: flex; flex-direction: column;
     align-items: center; gap: 2px;
-    padding: 0 14px;
+    padding: 0 16px;
   }
 
   .score {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 28px; font-weight: 800;
+    font-size: 30px; font-weight: 800;
     letter-spacing: 0.05em; line-height: 1;
   }
 
   .game-status { font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
 
+  /* ── Prob bar ── */
   .prob-bar-container { padding: 14px 20px 10px; }
-
   .prob-labels { display: flex; justify-content: space-between; margin-bottom: 6px; }
-
   .prob-label {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 13px; font-weight: 700; letter-spacing: 0.03em;
   }
-
   .prob-bar {
     height: 8px; border-radius: 4px;
     overflow: hidden; display: flex;
     background: var(--border);
   }
-
   .prob-fill-away { height: 100%; transition: width 0.6s ease; }
   .prob-fill-home { height: 100%; flex: 1; }
 
+  /* ── Chart ── */
   .chart-area { padding: 0 16px 8px; }
   .chart-wrap { position: relative; height: 200px; }
 
@@ -124,7 +177,6 @@
     display: flex; justify-content: space-between;
     padding: 4px 8px 14px;
   }
-
   .q-label {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 10px; font-weight: 600;
@@ -132,20 +184,18 @@
     color: var(--muted); text-align: center; flex: 1;
   }
 
+  /* ── Plays ── */
   .plays-section { border-top: 1px solid var(--border); padding: 14px 20px; }
-
   .plays-title {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 11px; font-weight: 700;
     letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--muted); margin-bottom: 10px;
   }
-
   .plays-list {
     display: flex; flex-direction: column; gap: 6px;
     max-height: 150px; overflow-y: auto;
   }
-
   .plays-list::-webkit-scrollbar { width: 3px; }
   .plays-list::-webkit-scrollbar-track { background: transparent; }
   .plays-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -157,55 +207,20 @@
     background: rgba(255,255,255,0.02);
     border-left: 3px solid transparent;
   }
-
   .play-swing {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 14px; font-weight: 700;
     min-width: 44px; text-align: right;
   }
-
   .play-desc { flex: 1; line-height: 1.4; }
 
-  .footer {
-    border-top: 1px solid var(--border);
-    padding: 10px 20px;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-
-  .footer-source { font-size: 10px; color: var(--muted); letter-spacing: 0.04em; }
-  .game-id-input-wrap { display: flex; gap: 6px; align-items: center; }
-
-  .game-id-input {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'Barlow', sans-serif;
-    font-size: 12px; padding: 5px 10px;
-    border-radius: 6px; width: 130px;
-    outline: none; transition: border-color 0.2s;
-  }
-
-  .game-id-input:focus { border-color: var(--accent); }
-  .game-id-input::placeholder { color: var(--muted); }
-
-  .load-btn {
-    background: var(--accent); color: #fff; border: none;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 12px; font-weight: 700;
-    letter-spacing: 0.06em; text-transform: uppercase;
-    padding: 6px 12px; border-radius: 6px;
-    cursor: pointer; transition: opacity 0.2s;
-  }
-
-  .load-btn:hover { opacity: 0.85; }
-
+  /* ── States ── */
   .state-overlay {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     min-height: 240px; gap: 10px;
     color: var(--muted); font-size: 13px;
   }
-
   .spinner {
     width: 28px; height: 28px;
     border: 2px solid var(--border);
@@ -213,24 +228,19 @@
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
   }
-
   @keyframes spin { to { transform: rotate(360deg); } }
+  .error-msg { color: #f87171; font-size: 12px; text-align: center; max-width: 300px; line-height: 1.6; }
 
-  .error-msg {
-    color: #f87171; font-size: 12px;
-    text-align: center; max-width: 300px; line-height: 1.6;
-  }
-
+  /* ── Tooltip ── */
   .tooltip-box {
-    position: absolute;
+    position: fixed;
     background: #1e2230;
     border: 1px solid var(--border);
     border-radius: 6px; padding: 7px 10px;
     font-size: 11px; pointer-events: none;
     opacity: 0; transition: opacity 0.15s;
-    z-index: 10; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    z-index: 100; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
   }
-
   .tooltip-box.visible { opacity: 1; }
   .tooltip-team { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; }
   .tooltip-sub { color: var(--muted); margin-top: 2px; max-width: 220px; white-space: normal; }
@@ -239,23 +249,52 @@
 <body>
 
 <div class="widget" id="widget">
+
+  <!-- Top bar with game selector -->
+  <div class="topbar">
+    <span class="topbar-title">🏈 Seahawks 2025</span>
+    <div class="game-select-wrap">
+      <select class="game-select" id="gameSelect" onchange="loadFromSelect()">
+        <optgroup label="Regular Season">
+          <option value="401772812" selected>Wk 1 · vs SF 49ers (L 13-17)</option>
+          <option value="401772832">Wk 2 · at PIT Steelers (W 31-17)</option>
+          <option value="401772840">Wk 3 · vs NO Saints (W 44-13)</option>
+          <option value="401772854">Wk 4 · at ARI Cardinals (W 23-20)</option>
+          <option value="401772863">Wk 5 · vs TB Buccaneers (L 35-38)</option>
+          <option value="401772874">Wk 6 · at JAX Jaguars (W 20-12)</option>
+          <option value="401772886">Wk 7 · vs HOU Texans (W 27-19)</option>
+          <option value="401772910">Wk 9 · at MIN Vikings (W 24-17)</option>
+          <option value="401772920">Wk 10 · vs IND Colts (W 38-30)</option>
+          <option value="401772930">Wk 11 · at LAR Rams (W 20-16)</option>
+          <option value="401772937">Wk 12 · vs DEN Broncos (W 28-14)</option>
+          <option value="401772944">Wk 13 · vs LAR Rams (W 31-24)</option>
+          <option value="401772950">Wk 14 · at GB Packers (W 33-30)</option>
+          <option value="401772957">Wk 15 · vs COL Colts (W 27-21)</option>
+          <option value="401772964">Wk 16 · at PHI Eagles (L 28-34)</option>
+          <option value="401772970">Wk 17 · at CAR Panthers (W 27-10)</option>
+          <option value="401772961">Wk 18 · at SF 49ers (W 13-3)</option>
+        </optgroup>
+        <optgroup label="Playoffs">
+          <option value="401772984">Div · vs SF 49ers (W 41-6)</option>
+          <option value="401772992">NFCCG · vs LAR Rams (W 31-27)</option>
+          <option value="401773000">SB LX · vs NE Patriots (W 31-7)</option>
+        </optgroup>
+      </select>
+    </div>
+  </div>
+
+  <!-- Matchup header -->
   <div class="header">
     <span class="header-label">Win Probability</span>
     <div class="game-info" id="gameInfo"></div>
-    <span class="header-label" style="text-align:right;"></span>
+    <span class="header-label" style="text-align:right;" id="headerRight"></span>
   </div>
 
+  <!-- Main content -->
   <div id="content">
     <div class="state-overlay"><div class="spinner"></div><span>Loading game data…</span></div>
   </div>
 
-  <div class="footer">
-    <span class="footer-source">Data: ESPN</span>
-    <div class="game-id-input-wrap">
-      <input class="game-id-input" id="gameIdInput" placeholder="ESPN Game ID" value="401772831" />
-      <button class="load-btn" onclick="loadGame()">Load</button>
-    </div>
-  </div>
 </div>
 
 <div class="tooltip-box" id="tooltip">
@@ -267,14 +306,17 @@
 const WORKER_URL = "https://white-water-f2e8.max-m-purdon.workers.dev";
 let chartInstance = null;
 
-async function loadGame() {
-  const gameId = document.getElementById("gameIdInput").value.trim();
-  if (!gameId) return;
+function loadFromSelect() {
+  var gameId = document.getElementById("gameSelect").value;
+  loadGame(gameId);
+}
+
+async function loadGame(gameId) {
   showLoading();
   try {
-    const res = await fetch(WORKER_URL + "/?gameId=" + gameId);
+    var res = await fetch(WORKER_URL + "/?gameId=" + gameId);
     if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
+    var data = await res.json();
     render(data);
   } catch (e) {
     showError("Could not load game data.<br><small>" + e.message + "</small>");
@@ -283,26 +325,26 @@ async function loadGame() {
 }
 
 function render(data) {
-  const comp = data.header && data.header.competitions && data.header.competitions[0];
+  var comp = data.header && data.header.competitions && data.header.competitions[0];
   if (!comp) { showError("Unexpected data format from ESPN."); return; }
 
-  const away = comp.competitors.find(function(t) { return t.homeAway === "away"; });
-  const home = comp.competitors.find(function(t) { return t.homeAway === "home"; });
-  const winProb = data.winprobability || [];
-  const plays = data.plays || [];
+  var away = comp.competitors.find(function(t) { return t.homeAway === "away"; });
+  var home = comp.competitors.find(function(t) { return t.homeAway === "home"; });
+  var winProb = data.winprobability || [];
+  var plays = data.plays || [];
 
-  const awayColor = "#" + ((away && away.team && away.team.color) || "e74c3c");
-  const homeColor = "#" + ((home && home.team && home.team.color) || "3498db");
+  var awayColor = "#" + ((away && away.team && away.team.color) || "e74c3c");
+  var homeColor = "#" + ((home && home.team && home.team.color) || "002244");
 
-  const last = winProb[winProb.length - 1];
-  const homeWP = last ? Math.round(last.homeWinPercentage * 100) : 50;
-  const awayWP = 100 - homeWP;
+  var last = winProb[winProb.length - 1];
+  var homeWP = last ? Math.round(last.homeWinPercentage * 100) : 50;
+  var awayWP = 100 - homeWP;
 
-  const awayAbbr = (away && away.team && away.team.abbreviation) || "AWAY";
-  const homeAbbr = (home && home.team && home.team.abbreviation) || "HOME";
-  const awayScore = (away && away.score != null) ? away.score : "–";
-  const homeScore = (home && home.score != null) ? home.score : "–";
-  const statusText = (comp.status && comp.status.type && comp.status.type.shortDetail) || "Final";
+  var awayAbbr = (away && away.team && away.team.abbreviation) || "AWAY";
+  var homeAbbr = (home && home.team && home.team.abbreviation) || "HOME";
+  var awayScore = (away && away.score != null) ? away.score : "\u2013";
+  var homeScore = (home && home.score != null) ? home.score : "\u2013";
+  var statusText = (comp.status && comp.status.type && comp.status.type.shortDetail) || "Final";
 
   document.getElementById("gameInfo").innerHTML =
     '<div class="team-block">' +
@@ -357,7 +399,22 @@ function buildChart(winProb, away, home, awayColor, homeColor, plays) {
   plays.forEach(function(p) { playMap[p.id] = p.text || ""; });
   var playTexts = winProb.map(function(p) { return playMap[p.playId] || ""; });
 
-  var ctx = document.getElementById("wpChart").getContext("2d");
+  var canvas = document.getElementById("wpChart");
+
+  canvas.addEventListener("mousemove", function(e) {
+    var tt = document.getElementById("tooltip");
+    var x = e.clientX + 14;
+    var y = e.clientY - 10;
+    if (x + 260 > window.innerWidth) x = e.clientX - 260;
+    tt.style.left = x + "px";
+    tt.style.top = y + "px";
+  });
+
+  canvas.addEventListener("mouseleave", function() {
+    document.getElementById("tooltip").classList.remove("visible");
+  });
+
+  var ctx = canvas.getContext("2d");
 
   var gradHome = ctx.createLinearGradient(0, 0, 0, 200);
   gradHome.addColorStop(0, homeColor + "55");
@@ -388,7 +445,7 @@ function buildChart(winProb, away, home, awayColor, homeColor, plays) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 600, easing: "easeInOutQuart" },
+      animation: { duration: 500, easing: "easeInOutQuart" },
       interaction: { mode: "index", intersect: false },
       plugins: {
         legend: { display: false },
@@ -404,14 +461,6 @@ function buildChart(winProb, away, home, awayColor, homeColor, plays) {
             document.getElementById("ttTeam").textContent = homeAbbr + " " + hp + "% \u00b7 " + awayAbbr + " " + ap + "%";
             var sub = playTexts[idx] || "";
             document.getElementById("ttSub").textContent = sub.length > 70 ? sub.substring(0, 70) + "\u2026" : sub;
-
-            var pos = context.tooltip.caretX;
-            var wRect = document.getElementById("widget").getBoundingClientRect();
-            var chartRect = document.getElementById("wpChart").getBoundingClientRect();
-            var left = chartRect.left - wRect.left + pos + 12;
-            if (left + 240 > wRect.width) left = chartRect.left - wRect.left + pos - 250;
-            tt.style.left = left + "px";
-            tt.style.top = (chartRect.top - wRect.top + context.tooltip.caretY - 20) + "px";
             tt.classList.add("visible");
           }
         }
@@ -427,7 +476,7 @@ function buildChart(winProb, away, home, awayColor, homeColor, plays) {
             stepSize: 50
           },
           grid: {
-            color: function(ctx) { return ctx.tick && ctx.tick.value === 50 ? "#2d3344" : "transparent"; }
+            color: function(c) { return c.tick && c.tick.value === 50 ? "#2d3344" : "transparent"; }
           },
           border: { display: false }
         }
@@ -489,6 +538,7 @@ function buildQuarterLabels(winProb) {
 
 function showLoading() {
   document.getElementById("gameInfo").innerHTML = "";
+  document.getElementById("headerRight").textContent = "";
   document.getElementById("content").innerHTML =
     '<div class="state-overlay"><div class="spinner"></div><span>Loading game data\u2026</span></div>';
 }
@@ -498,7 +548,8 @@ function showError(msg) {
     '<div class="state-overlay"><span class="error-msg">\u26a0 ' + msg + '</span></div>';
 }
 
-loadGame();
+// Load default: Wk 1 vs 49ers
+loadGame("401772812");
 </script>
 </body>
 </html>
